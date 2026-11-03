@@ -1,0 +1,61 @@
+name: build-apk
+
+# 手动触发：所有文件都创建好之后，到 Actions 页面点 Run workflow
+on:
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.24.5
+
+      - name: 生成安卓工程骨架
+        run: flutter create --platforms android --org com.weiyue.reader --project-name weiyue app_src
+
+      - name: 替换为微阅源码
+        run: |
+          rm -rf app_src/lib app_src/test app_src/pubspec.yaml
+          cp -r lib app_src/lib
+          cp -r test app_src/test
+          cp pubspec.yaml app_src/pubspec.yaml
+
+      - name: 配置安卓清单（网络权限 + 应用名）
+        working-directory: app_src
+        run: |
+          sed -i 's|<application|<uses-permission android:name="android.permission.INTERNET"/>\n    <application|' android/app/src/main/AndroidManifest.xml
+          sed -i 's|android:label="[^"]*"|android:label="微阅"|' android/app/src/main/AndroidManifest.xml
+          sed -i 's|android:label="微阅"|android:label="微阅"\n        android:usesCleartextTraffic="true"|' android/app/src/main/AndroidManifest.xml
+          grep -q 'INTERNET' android/app/src/main/AndroidManifest.xml && echo 'INTERNET permission OK'
+          grep -q 'usesCleartextTraffic' android/app/src/main/AndroidManifest.xml && echo 'Cleartext OK'
+
+      - name: 安装依赖
+        working-directory: app_src
+        run: flutter pub get
+
+      - name: 静态检查
+        working-directory: app_src
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - name: 单元测试
+        working-directory: app_src
+        run: flutter test
+
+      - name: 编译 APK
+        working-directory: app_src
+        run: flutter build apk --release
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: weiyue-apk
+          path: app_src/build/app/outputs/flutter-apk/app-release.apk
