@@ -39,6 +39,34 @@ jobs:
           grep -q 'INTERNET' android/app/src/main/AndroidManifest.xml && echo 'INTERNET permission OK'
           grep -q 'usesCleartextTraffic' android/app/src/main/AndroidManifest.xml && echo 'Cleartext OK'
 
+      - name: 配置固定签名（后续更新可直接覆盖安装）
+        working-directory: app_src
+        run: |
+          mkdir -p android/keystore
+          cp ../keystore/weiyue-release.keystore android/keystore/
+          python3 - <<'PYEOF'
+          p = 'android/app/build.gradle'
+          s = open(p, encoding='utf-8').read()
+          if 'signingConfigs {' not in s:
+              anchor = '    buildTypes {'
+              block = '''    signingConfigs {
+            release {
+                storeFile file("keystore/weiyue-release.keystore")
+                storePassword "weiyue123456"
+                keyAlias "weiyue"
+                keyPassword "weiyue123456"
+            }
+        }
+
+    buildTypes {'''
+              s = s.replace(anchor, block, 1)
+          s = s.replace('signingConfig = signingConfigs.debug',
+                        'signingConfig = signingConfigs.release')
+          open(p, 'w', encoding='utf-8').write(s)
+          print('signing configured')
+          PYEOF
+          grep -q 'signingConfigs.release' android/app/build.gradle && echo 'Release signing OK'
+
       - name: 安装依赖
         working-directory: app_src
         run: flutter pub get
