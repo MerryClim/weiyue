@@ -49,16 +49,15 @@ jobs:
           s = open(p, encoding='utf-8').read()
           if 'signingConfigs {' not in s:
               anchor = '    buildTypes {'
-              block = '''    signingConfigs {
-            release {
-                storeFile file("keystore/weiyue-release.keystore")
-                storePassword "weiyue123456"
-                keyAlias "weiyue"
-                keyPassword "weiyue123456"
-            }
-        }
-
-    buildTypes {'''
+              block = ("    signingConfigs {\n"
+                       "        release {\n"
+                       "            storeFile file('keystore/weiyue-release.keystore')\n"
+                       "            storePassword 'weiyue123456'\n"
+                       "            keyAlias 'weiyue'\n"
+                       "            keyPassword 'weiyue123456'\n"
+                       "        }\n"
+                       "    }\n\n"
+                       "    buildTypes {")
               s = s.replace(anchor, block, 1)
           s = s.replace('signingConfig = signingConfigs.debug',
                         'signingConfig = signingConfigs.release')
