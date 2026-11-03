@@ -423,10 +423,12 @@ class _ReaderScreenState extends State<ReaderScreen> {
   void _collectRuns(dom.Node node, TextStyle style, String? href, List<_Run> runs) {
     if (node is dom.Text) {
       runs.add(_Run(node.text, style, href));
-    } else if (node is dom.Element) {
+      return;
+    }
+    var st = style;
+    String? h = href;
+    if (node is dom.Element) {
       final tag = node.localName ?? '';
-      var st = style;
-      String? h = href;
       if (tag == 'b' || tag == 'strong') {
         st = st.merge(const TextStyle(fontWeight: FontWeight.w700));
       }
@@ -441,9 +443,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
         final hrefAttr = node.attributes['href'];
         if (hrefAttr != null && hrefAttr.startsWith('http')) h = hrefAttr;
       }
-      for (final c in node.nodes) {
-        _collectRuns(c, st, h, runs);
-      }
+    }
+    // DocumentFragment 等其他容器节点：直接递归子节点
+    for (final c in node.nodes) {
+      _collectRuns(c, st, h, runs);
     }
   }
 
