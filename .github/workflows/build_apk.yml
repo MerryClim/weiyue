@@ -42,8 +42,8 @@ jobs:
       - name: 配置固定签名（后续更新可直接覆盖安装）
         working-directory: app_src
         run: |
-          mkdir -p android/keystore
-          cp ../keystore/weiyue-release.keystore android/keystore/
+          mkdir -p android/app/keystore
+          cp ../keystore/weiyue-release.keystore android/app/keystore/
           python3 - <<'PYEOF'
           p = 'android/app/build.gradle'
           s = open(p, encoding='utf-8').read()
